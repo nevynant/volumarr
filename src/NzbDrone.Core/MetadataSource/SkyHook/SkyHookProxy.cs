@@ -267,6 +267,17 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             return GetSeriesDetail(seriesAsin, out _);
         }
 
+        // The Audible host is authoritative for which catalog is served
+        // (confirmed live: a UK-only ASIN resolves against the UK host even
+        // though every request historically sent marketplace=us, and does
+        // NOT resolve against the US host), so this param is effectively
+        // cosmetic -- but sending "us" against the UK host was contradictory.
+        // Derive it from the base URL so the request is internally coherent.
+        private static string MarketplaceFor(string baseUrl)
+        {
+            return baseUrl == BaseUrlUk ? "uk" : Marketplace;
+        }
+
         private AudibleSeriesDetailResource GetSeriesDetail(string seriesAsin, out string resolvedBaseUrl)
         {
             var detail = FetchSeriesDetail(BaseUrl, seriesAsin);
@@ -287,7 +298,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                 .Resource($"/catalog/products/{seriesAsin}")
                 .Accept(HttpAccept.Json)
                 .AddQueryParam("response_groups", "relationships,product_desc,contributors")
-                .AddQueryParam("marketplace", Marketplace)
+                .AddQueryParam("marketplace", MarketplaceFor(baseUrl))
                 .Build();
 
             httpRequest.SuppressHttpError = true;
@@ -335,11 +346,23 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                     .Accept(HttpAccept.Json)
                     .AddQueryParam("asins", string.Join(",", chunk))
                     .AddQueryParam("response_groups", "product_desc,product_attrs,series,contributors,media")
-                    .AddQueryParam("marketplace", Marketplace)
+                    .AddQueryParam("marketplace", MarketplaceFor(baseUrl))
                     .Build();
 
                 var httpResponse = _httpClient.Get<AudibleProductSearchResponse>(httpRequest);
                 products.AddRange(httpResponse.Resource.Products);
+            }
+
+            // Audible occasionally omits an ASIN from the bulk response (a
+            // withdrawn/region-locked edition); without this the book would
+            // just vanish from the series on refresh with no trace. Surface
+            // it so a missing book is diagnosable rather than silent.
+            if (products.Count < asins.Count)
+            {
+                var returned = products.Select(p => p.Asin).ToHashSet();
+                var missing = asins.Where(a => !returned.Contains(a)).ToList();
+                _logger.Warn("Audible returned {0} of {1} requested products; missing ASINs: {2}",
+                    products.Count, asins.Count, string.Join(", ", missing));
             }
 
             return products;
@@ -679,19 +702,30 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                 return;
             }
 
-            var altAsins = needingDates.SelectMany(b => alternateEditions[b.Asin]).Distinct().ToList();
-            var altBooks = GetProductsByAsins(altAsins, baseUrl).ToDictionary(b => b.Asin);
-
-            foreach (var book in needingDates)
+            // This is best-effort enrichment: borrowing a date should never
+            // take down the whole series refresh. If the alt-edition fetch
+            // fails, leave the sentinel dates as-is (they'll simply show as
+            // blank) rather than propagating the error.
+            try
             {
-                foreach (var altAsin in alternateEditions[book.Asin])
+                var altAsins = needingDates.SelectMany(b => alternateEditions[b.Asin]).Distinct().ToList();
+                var altBooks = GetProductsByAsins(altAsins, baseUrl).ToDictionary(b => b.Asin);
+
+                foreach (var book in needingDates)
                 {
-                    if (altBooks.TryGetValue(altAsin, out var alt) && TryParseReleaseDate(alt.ReleaseDate, out _))
+                    foreach (var altAsin in alternateEditions[book.Asin])
                     {
-                        book.ReleaseDate = alt.ReleaseDate;
-                        break;
+                        if (altBooks.TryGetValue(altAsin, out var alt) && TryParseReleaseDate(alt.ReleaseDate, out _))
+                        {
+                            book.ReleaseDate = alt.ReleaseDate;
+                            break;
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn(ex, "Failed to patch placeholder release dates from alternate editions; leaving dates blank");
             }
         }
 
