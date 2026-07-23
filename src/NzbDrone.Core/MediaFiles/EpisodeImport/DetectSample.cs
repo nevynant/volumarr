@@ -97,6 +97,19 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                 return DetectSampleResult.NotSample;
             }
 
+            // Ebooks (.epub, Season 2) have no runtime -- the runtime-based
+            // sample check below would either reject them as a zero-runtime
+            // "sample" or throw when MediaInfo is null (ffprobe returns
+            // nothing for a non-media container). This only bites on a fresh
+            // download import; existing-file rescans skip the sample check
+            // entirely (see NotSampleSpecification), which is why it stayed
+            // hidden while the library was populated by rescan.
+            if (extension != null && extension.Equals(".epub", StringComparison.InvariantCultureIgnoreCase))
+            {
+                _logger.Debug("Skipping sample check for .epub file");
+                return DetectSampleResult.NotSample;
+            }
+
             return DetectSampleResult.Indeterminate;
         }
 

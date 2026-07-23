@@ -89,6 +89,21 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport
         }
 
         [Test]
+        public void should_return_false_for_epub_without_reading_runtime()
+        {
+            // Ebooks have no runtime; the sample check must not probe them
+            // (ffprobe returns null MediaInfo, which would NRE) nor treat a
+            // zero runtime as a "sample" rejection.
+            _localEpisode.Path = @"C:\Test\Heretical Fishing - Book 003.epub";
+
+            Subject.IsSample(_localEpisode.Series,
+                _localEpisode.Path,
+                _localEpisode.IsSpecial).Should().Be(DetectSampleResult.NotSample);
+
+            Mocker.GetMock<IVideoFileInfoReader>().Verify(c => c.GetRunTime(It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
         public void should_use_runtime()
         {
             GivenRuntime(120);

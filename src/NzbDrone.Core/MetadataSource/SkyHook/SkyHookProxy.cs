@@ -403,8 +403,8 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
         // are dropped entirely (their contents are already listed
         // individually elsewhere in the same relationships list),
         // duplicate editions keep only the first ASIN seen per sequence,
-        // and fractional entries get their own slot (floor*10+5, e.g. 8.5
-        // -> 85) distinct from any whole number.
+        // and fractional entries get their own slot (floor*1000+500, e.g.
+        // 8.5 -> 8500) distinct from any whole number.
         //
         // Whole-numbered books deliberately keep their exact original
         // position, even in a series that also has a fractional book --
