@@ -62,6 +62,23 @@ namespace NzbDrone.Core.Test.MediaFiles.EpisodeImport.Specifications
         }
 
         [Test]
+        public void should_accept_epub_even_if_audio_stream_count_is_0()
+        {
+            // Real bug found live: a user's book-3 epub happened to get a
+            // valid MediaInfo probe result with zero audio streams (likely
+            // ffprobe reading embedded cover art as a stream) while sibling
+            // books' identically-shaped epubs returned null MediaInfo and
+            // skipped this check via the branch above -- rejecting a text
+            // file for lacking audio was never correct to begin with.
+            _localEpisode.Path = @"C:\Test\Unsorted\Heretical Fishing\Book 3\Heretical Fishing 3.epub".AsOsAgnostic();
+            _localEpisode.MediaInfo = Builder<MediaInfoModel>.CreateNew()
+                .With(m => m.AudioStreams = [])
+                .Build();
+
+            Subject.IsSatisfiedBy(_localEpisode, null).Accepted.Should().BeTrue();
+        }
+
+        [Test]
         public void should_accept_if_audio_stream_count_is_0()
         {
             _localEpisode.MediaInfo = Builder<MediaInfoModel>.CreateNew()
