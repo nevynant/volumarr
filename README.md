@@ -17,6 +17,16 @@ project** — it's an independent fork.
 - Episode/season concepts repurposed to represent books within a series.
 - Currently a personal/homelab project, not an official release.
 
+## AI disclosure
+
+The Volumarr modifications in this fork were written substantially by an
+AI assistant (Anthropic's Claude, via Claude Code), working under human
+direction and review. Changes were developed iteratively against a real
+deployment and its unit test suite, but this is AI-assisted code in a
+personal project — read it with the same scrutiny you'd give any
+unfamiliar codebase, and see the license's no-warranty terms below. The
+underlying Sonarr codebase is the Sonarr team's human-authored work.
+
 ## License
 
 Volumarr is licensed under the **GNU General Public License v3.0**, the
