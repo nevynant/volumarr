@@ -73,14 +73,11 @@ namespace NzbDrone.Core.Notifications.Telegram
         {
             try
             {
-                const string brandedTitle = "Sonarr - Test Notification";
+                const string brandedTitle = "Volumarr - Test Notification";
                 const string title = "Test Notification";
-                const string body = "This is a test message from Sonarr";
+                const string body = "This is a test message from Volumarr";
 
-                var links = new List<NotificationMetadataLink>
-                    {
-                        new NotificationMetadataLink(null, "Sonarr.tv", "https://sonarr.tv")
-                    };
+                var links = new List<NotificationMetadataLink>();
 
                 var testMessageTitle = settings.IncludeAppNameInTitle ? brandedTitle : title;
                 testMessageTitle = settings.IncludeInstanceNameInTitle ? $"{testMessageTitle} - {_configFileProvider.InstanceName}" : testMessageTitle;

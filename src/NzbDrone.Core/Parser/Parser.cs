@@ -25,6 +25,53 @@ namespace NzbDrone.Core.Parser
 //                new Regex(@"^(?:(?<absoluteepisode>\d{2,3})(?:_|-|\s|\.)+)+(?<title>.+?)(?:\W|_)+(?:S?(?<season>(?<!\d+)\d{1,2}(?!\d+))(?:(?:\-|[ex]|\W[ex]){1,2}(?<episode>\d{2}(?!\d+)))+)",
 //                          RegexOptions.IgnoreCase | RegexOptions.Compiled),
 
+                // Audiobook - Title - Book NNN.5 - Subtitle (fractional /
+                // novella entry, e.g. "The Beginning After The End - Book
+                // 008.5 - Amongst the Fallen.m4b"). Must sit ABOVE the
+                // whole-number Book pattern below, which would otherwise
+                // match the "Book 008" prefix and silently misfile the
+                // novella as book 8. The number can't be captured as
+                // "absoluteepisode": fractional captures route to
+                // SpecialAbsoluteEpisodeNumbers (anime specials), a dead end
+                // for series-type=anime lookups. Instead the marker group is
+                // post-processed in ParseTitle to floor*1000+500
+                // (8.5 -> 8500), mirroring how
+                // SkyHookProxy.ResolveBookPositions slots fractional Audible
+                // sequence numbers between their neighbors.
+                //
+                // The fraction is restricted to 25/75/5 (the only values
+                // real novella numbering uses) rather than \d{1,2}, because
+                // dot-separated release names would otherwise false-positive
+                // on audio metadata: "Book.010.32Kbps" (bitrate) or
+                // "Book.008.5.1.Surround" (channel layout). The trailing
+                // (?!\.\d) guard rejects the 5.1-surround shape
+                // specifically, since ".5" alone can't tell "book 8.5" from
+                // "book 8, 5.1 audio" in fully dot-separated names.
+                new Regex(@"^(?<title>.+?)[-_. ]+Book[-_. ]+(?<audiobookfractionalbook>(?<!\d+)\d{1,3})\.(?:25|75|5)(?!\d)(?!\.\d)",
+                          RegexOptions.IgnoreCase | RegexOptions.Compiled),
+
+                // Audiobook - Title - Book NNN - Chapter/Subtitle (e.g.
+                // "Dungeon Crawler Carl - Book 001 - The Apocalypse Will be
+                // Televised.m4b"). Reuses the existing absolute-episode-number
+                // path (same one anime releases use) rather than a new
+                // concept -- ParsingService.GetEpisodes branches purely on
+                // AbsoluteEpisodeNumbers.Any(), no further plumbing needed.
+                //
+                // Also matches 2-in-1 omnibus editions ("Book 001, 002 -
+                // Early Years, New Heights" / "Book 003-004"): repeated
+                // absoluteepisode captures expand to the full range in
+                // ParseMatchCollection, mapping one file to every book it
+                // contains. The chain separator is deliberately narrow --
+                // comma/ampersand/plus with optional spacing, or a BARE
+                // unspaced hyphen. A spaced " - " must NOT chain, because
+                // that's the subtitle separator and a subtitle starting with
+                // a number ("Book 001 - 2034 ...") would otherwise expand
+                // into a giant bogus range. Chained captures are further
+                // capped at 3 digits so a bare-hyphen year ("Book 1-2021")
+                // can't expand into a 2021-episode range.
+                new Regex(@"^(?<title>.+?)[-_. ]+Book[-_. ]+(?<absoluteepisode>(?<!\d+)\d{1,4}(?!\d+))(?:(?:[-_. ]*[,&+][-_. ]*|-)(?<absoluteepisode>(?<!\d+)\d{1,3}(?!\d+)))*",
+                          RegexOptions.IgnoreCase | RegexOptions.Compiled),
+
                 // Daily episode with year in series title and air time after date (Plex DVR format)
                 new Regex(@"^^(?<title>.+?\((?<titleyear>\d{4})\))[-_. ]+(?<airyear>19[4-9]\d|20\d\d)(?<sep>[-_]?)(?<airmonth>0\d|1[0-2])\k<sep>(?<airday>[0-2]\d|3[01])[-_. ]\d{2}[-_. ]\d{2}[-_. ]\d{2}",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled),
@@ -453,6 +500,56 @@ namespace NzbDrone.Core.Parser
                 // Episodes with a title, 3 digit season number, Single episodes (S001E05, 1x05, etc) & Multi-episode (S001E05E06, S001E05-06, S001E05 E06, etc)
                 new Regex(@"^(?<title>.+?)(?:(?:[-_\W](?<![()\[!]))+S?(?<season>(?<!\d+)(?:\d{3})(?!\d+))(?:[ex]|\W[ex]){1,2}(?<episode>\d{2,3}(?!\d+))(?:(?:\-|[ex]|\W[ex]|_){1,2}(?<episode>\d{2,3}(?!\d+)))*)(?:[-_. ]|$)",
                     RegexOptions.IgnoreCase | RegexOptions.Compiled),
+
+                // Audiobook - last-resort fallbacks for AudioBookBay-style
+                // titles with no "Book" keyword. Both variants below were
+                // originally placed near the top of this list (by the Book
+                // NNN pattern) and caused real regressions there: the colon
+                // variant misparsed "Series 100: Bucket List S01..." as an
+                // absolute-numbered release instead of a season pack, and
+                // the no-colon variant broke 13 anime title tests (e.g.
+                // "Episode 4 VOSTFR" read as "4 VOSTFR"). Moved here, as
+                // the absolute last entries in this list, so every more
+                // specific pattern above gets first shot -- these only
+                // fire once everything else has already failed.
+
+                // "Title N: Subtitle" (e.g. torrent/release title "Mage
+                // Tank 2: A LitRPG Adventure - Cornman [M4B]").
+                new Regex(@"^(?<title>.+?)[-_. ]+(?<absoluteepisode>(?<!\d+)\d{1,3}(?!\d+)):\s",
+                          RegexOptions.IgnoreCase | RegexOptions.Compiled),
+
+                // "Title N Subtitle", no colon (e.g. the actual downloaded
+                // file "Mage Tank 2 A LitRPG Adventure.m4b").
+                new Regex(@"^(?<title>.+?)[-_. ]+(?<absoluteepisode>(?<!\d+)\d{1,3}(?!\d+))\s+[A-Z]",
+                          RegexOptions.IgnoreCase | RegexOptions.Compiled),
+
+                // "Title - Author [M4B]" -- book 1 releases with no number
+                // anywhere (e.g. "Mage Tank - Cornman [M4B] [128 Kbps]").
+                // There's no digit to capture here, so unlike every other
+                // entry in this file this can't feed AbsoluteEpisodeNumber
+                // through a normal capture group -- see the
+                // "audiobookImplicitBookOne" marker group handling in
+                // ParseTitle below, which hardcodes it to 1 only when this
+                // exact pattern is what matched. Safe because: (a) this is
+                // the absolute last entry in the list, so every numbered
+                // pattern above -- including the other two audiobook
+                // fallbacks -- already had first shot, and (b) the literal
+                // "[M4B]" tag is audiobook-specific and essentially never
+                // appears in non-audiobook release titles.
+                new Regex(@"^(?<title>.+?) - [^\[\]]+\[M4B\](?<audiobookImplicitBookOne>)",
+                          RegexOptions.IgnoreCase | RegexOptions.Compiled),
+
+                // Audiobook - folder-fallback for "Book N - Subtitle"
+                // folders holding unnumbered files (real case: "Book 8 - A
+                // Parade of Horribles/A Parade of Horribles.epub" -- the
+                // spaced dash after the number defeats every pattern above,
+                // which all require a series title BEFORE the "Book"
+                // keyword). Anchored at string start with a required digit,
+                // empty title capture (series identity comes from the folder
+                // being scanned, not the parse). Last in the list: only
+                // fires when nothing more specific matched.
+                new Regex(@"^(?<title>)Book[-_. ]+(?<absoluteepisode>(?<!\d+)\d{1,4}(?!\d+))",
+                          RegexOptions.IgnoreCase | RegexOptions.Compiled),
             };
 
         private static readonly Regex[] SpecialEpisodeTitleRegex = new Regex[]
@@ -570,7 +667,38 @@ namespace NzbDrone.Core.Parser
             { "dec", 12 },
         };
 
+        // Volumarr: ebook editions live in Season 2, audiobooks in Season 1.
+        // File matching is absolute-number-based and season-agnostic, so the
+        // two formats are kept apart by offsetting every ebook absolute
+        // number by this constant (book 1 epub -> 1000001). Like the
+        // fractional floor*1000+500 slots, the offset is self-identifying:
+        // no real book count ever reaches 1,000,000, so the frontend can
+        // decode it back for display with no extra data.
+        // SkyHookProxy.MapEbookEpisode assigns the same offset on the
+        // metadata side.
+        public const int EbookAbsoluteEpisodeOffset = 1000000;
+
         public static ParsedEpisodeInfo ParsePath(string path)
+        {
+            var result = ParsePathInternal(path);
+
+            // Route ebook files to their Season 2 slots. Applied here, on
+            // the single choke point every disk-file parse flows through
+            // (DiskScan, ManualImport, DownloadedEpisodesImport), rather
+            // than in each caller. Release TITLES from indexers never carry
+            // a file extension, so grabs are unaffected (ebook grabbing is
+            // deliberately out of scope -- disk tracking only).
+            if (result != null &&
+                result.AbsoluteEpisodeNumbers.Any() &&
+                path.EndsWith(".epub", StringComparison.OrdinalIgnoreCase))
+            {
+                result.AbsoluteEpisodeNumbers = result.AbsoluteEpisodeNumbers.Select(n => n + EbookAbsoluteEpisodeOffset).ToArray();
+            }
+
+            return result;
+        }
+
+        private static ParsedEpisodeInfo ParsePathInternal(string path)
         {
             var fileInfo = new FileInfo(path);
             var result = ParseTitle(fileInfo.Name);
@@ -750,6 +878,31 @@ namespace NzbDrone.Core.Parser
 
                             if (result != null)
                             {
+                                // See the "Title - Author [M4B]" pattern's
+                                // comment above -- this marker group means
+                                // that specific no-number-at-all pattern is
+                                // what matched, so hardcode book 1 here
+                                // rather than trying to make a regex
+                                // capture group produce a digit that was
+                                // never actually in the source text.
+                                if (match[0].Groups["audiobookImplicitBookOne"].Success)
+                                {
+                                    result.AbsoluteEpisodeNumbers = new[] { 1 };
+                                    result.FullSeason = false;
+                                }
+
+                                // "Book NNN.5" fractional marker (see that
+                                // pattern's comment above) -- compute the
+                                // same floor*1000+500 slot the Audible
+                                // metadata side assigns fractional books, so
+                                // the file lands on the right episode.
+                                if (match[0].Groups["audiobookfractionalbook"].Success)
+                                {
+                                    var wholeBook = int.Parse(match[0].Groups["audiobookfractionalbook"].Value);
+                                    result.AbsoluteEpisodeNumbers = new[] { (wholeBook * 1000) + 500 };
+                                    result.FullSeason = false;
+                                }
+
                                 if (result.FullSeason && result.ReleaseTokens.ContainsIgnoreCase("Special"))
                                 {
                                     result.FullSeason = false;

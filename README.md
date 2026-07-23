@@ -1,85 +1,60 @@
-# <img width="24px" src="./Logo/256.png" alt="Sonarr"></img> Sonarr
+# Volumarr
 
-[![Translated](https://translate.servarr.com/widget/servarr/sonarr/svg-badge.svg)](https://translate.servarr.com/engage/servarr/)
-[![Backers on Open Collective](https://opencollective.com/Sonarr/backers/badge.svg)](#backers)
-[![Sponsors on Open Collective](https://opencollective.com/Sonarr/sponsors/badge.svg)](#sponsors)
-[![Mega Sponsors on Open Collective](https://opencollective.com/Sonarr/megasponsors/badge.svg)](#mega-sponsors)
+Volumarr is an audiobook series tracker. It monitors your Audible-catalog
+series, watches indexers for new books, and grabs, sorts, and renames them
+as they're released — the same kind of automation Sonarr provides for TV,
+applied to audiobooks instead.
 
-Sonarr is a PVR for Usenet and BitTorrent users. It can monitor multiple RSS feeds for new episodes of your favorite shows and will grab, sort and rename them. It can also be configured to automatically upgrade the quality of files already downloaded when a better quality format becomes available.
+## About this project
+
+Volumarr is a modified version of [Sonarr](https://github.com/Sonarr/Sonarr),
+adapted to track audiobook series via Audible instead of TV series via
+TheTVDB. It is **not affiliated with or endorsed by the Sonarr/Servarr
+project** — it's an independent fork.
+
+- Modified from Sonarr, starting 2026.
+- Metadata source swapped from TheTVDB to Audible's catalog API.
+- Episode/season concepts repurposed to represent books within a series.
+- Currently a personal/homelab project, not an official release.
+
+## License
+
+Volumarr is licensed under the **GNU General Public License v3.0**, the
+same license as the Sonarr codebase it's built on. See [LICENSE.md](LICENSE.md)
+for the full text. As with the original license, this means:
+
+- The source code for Volumarr, including all modifications, is available
+  to anyone who receives a copy of the software.
+- You're free to run, study, modify, and share Volumarr, provided any
+  copies or derivative works you distribute remain under the same license.
+- Volumarr comes with no warranty; see the license for details.
+
+Original Sonarr copyright 2010-2025, the Sonarr Team. Modifications for
+Volumarr copyright 2026, the Volumarr contributors.
 
 ## Getting Started
 
-- [Download/Installation](https://sonarr.tv/#downloads-v3)
-- [FAQ](https://wiki.servarr.com/sonarr/faq)
-- [Wiki](https://wiki.servarr.com/Sonarr)
-- [API Documentation](https://sonarr.tv/docs/api)
-- [Donate](https://sonarr.tv/donate)
+Volumarr is currently intended for personal/homelab deployment via Docker.
+There is no public download page, installer, or hosted documentation yet.
 
-## Support
+### Finding an indexer
 
-Note: GitHub Issues are for Bugs and Feature Requests Only
+Volumarr searches indexers the same way Sonarr does (directly, or via
+Prowlarr/Jackett), but most public/private trackers are TV- or movie-focused
+and won't have audiobook content at all. **AudioBookBay** is a known
+audiobook-focused tracker; if you're running Jackett, check its indexer list
+for "AudioBookBay" and add it there, then let Prowlarr proxy it (or add it
+directly to Volumarr's own indexer settings) the same way you would any
+other indexer. Without at least one audiobook-focused indexer configured,
+searches will run without errors but never find anything.
 
-- [Forums](https://forums.sonarr.tv/)
-- [Discord](https://discord.gg/M6BvZn5)
-- [GitHub - Bugs and Feature Requests Only](https://github.com/Sonarr/Sonarr/issues)
-- [IRC](https://web.libera.chat/?channels=#sonarr)
-- [Reddit](https://www.reddit.com/r/sonarr)
-- [Wiki](https://wiki.servarr.com/sonarr)
+The default quality profile ("Any") is already configured to accept
+audiobook releases out of the box — no manual adjustment needed.
 
-## Features
+## Acknowledgements
 
-### Current Features
-
-- Support for major platforms: Windows, Linux, macOS, Raspberry Pi, etc.
-- Automatically detects new episodes
-- Can scan your existing library and download any missing episodes
-- Can watch for better quality of the episodes you already have and do an automatic upgrade. _eg. from DVD to Blu-Ray_
-- Automatic failed download handling will try another release if one fails
-- Manual search so you can pick any release or to see why a release was not downloaded automatically
-- Fully configurable episode renaming
-- Full integration with SABnzbd and NZBGet
-- Full integration with Kodi, Plex (notification, library update, metadata)
-- Full support for specials and multi-episode releases
-- And a beautiful UI
-
-## Contributing
-
-### Development
-
-This project exists thanks to all the people who contribute. [Contribute](CONTRIBUTING.md).
-
-<a href="https://github.com/Sonarr/Sonarr/graphs/contributors"><img src="https://opencollective.com/Sonarr/contributors.svg?width=890&button=false" /></a>
-
-### Supporters
-
-This project would not be possible without the support of our users and software providers.
-[**Become a sponsor or backer**](https://opencollective.com/sonarr) to help us out!
-
-#### Mega Sponsors
-
-[![Sponsors](https://opencollective.com/sonarr/tiers/mega-sponsor.svg?width=890)](https://opencollective.com/sonarr/contribute/mega-sponsor-21443/checkout)
-
-#### Sponsors
-
-[![Flexible Sponsors](https://opencollective.com/sonarr/sponsors.svg?width=890)](https://opencollective.com/sonarr/contribute/sponsor-21457/checkout)
-
-#### Backers
-
-[![Backers](https://opencollective.com/sonarr/backers.svg?width=890)](https://opencollective.com/sonarr/contribute/backer-21442/checkout)
-
-#### JetBrains
-
-Thank you to [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.png" alt="JetBrains" width="96">](http://www.jetbrains.com/) for providing us with free licenses to their great tools
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/TeamCity.png" alt="TeamCity" width="64">](http://www.jetbrains.com/teamcity/)
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/ReSharper.png" alt="ReSharper" width="64">](http://www.jetbrains.com/resharper/)
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/dotTrace.png" alt="dotTrace" width="64">](http://www.jetbrains.com/dottrace/)
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/Rider.png" alt="Rider" width="64">](http://www.jetbrains.com/rider/)
-
-### Licenses
-
-- [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
-- Copyright 2010-2025
+Volumarr exists because of the work of the Sonarr team and the broader
+Servarr project. The core application, download/indexer automation, and
+UI framework this project modifies are theirs; audiobook-specific behavior
+(Audible metadata, book-based file organization, indexer search adjustments)
+is the work added in this fork.

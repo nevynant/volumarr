@@ -27,6 +27,7 @@ using NzbDrone.Core.Jobs;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Messaging.Commands;
+using NzbDrone.Core.MetadataSource.Audible;
 using NzbDrone.Core.Notifications;
 using NzbDrone.Core.Organizer;
 using NzbDrone.Core.Parser.Model;
@@ -167,6 +168,8 @@ namespace NzbDrone.Core.Datastore
             Mapper.Entity<NotificationStatus>("NotificationStatus").RegisterModel();
 
             Mapper.Entity<CustomFilter>("CustomFilters").RegisterModel();
+
+            Mapper.Entity<AudibleSeriesMap>("AudibleSeriesMap").RegisterModel();
 
             Mapper.Entity<DownloadHistory>("DownloadHistory").RegisterModel();
 

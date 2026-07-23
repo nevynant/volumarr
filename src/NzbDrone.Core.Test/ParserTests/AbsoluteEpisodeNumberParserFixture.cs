@@ -140,6 +140,40 @@ namespace NzbDrone.Core.Test.ParserTests
         [TestCase("[Dae-P9] Anime Series - 05 - S01E05 - Marrying by Contesting (BD 1080p HEVC FLAC AAC) [Dual Audio] [5BCD56B8]", "Anime Series", 5, 1, 5)]
         [TestCase("[Kaleido-subs] Animation - 12 (S01E12) - (WEB 1080p HEVC x265 10-bit E-AC3 2.0) [1ADD8F6D]", "Animation", 12, 1, 12)]
 
+        // Audiobook "Book NNN" naming -- real filenames confirmed from the
+        // user's actual library.
+        [TestCase("Dungeon Crawler Carl - Book 001 - The Apocalypse Will be Televised.m4b", "Dungeon Crawler Carl", 1, 0, 0)]
+        [TestCase("He Who Fights with Monsters - Book 001.m4b", "He Who Fights with Monsters", 1, 0, 0)]
+        [TestCase("Hell Difficulty Tutorial - Book 010.m4b", "Hell Difficulty Tutorial", 10, 0, 0)]
+
+        // Audiobook -- AudioBookBay-style release titles with no "Book"
+        // keyword, real search results confirmed live against the user's
+        // actual AudioBookBay indexer.
+        [TestCase("Mage Tank 2: A LitRPG Adventure - Cornman [M4B]", "Mage Tank", 2, 0, 0)]
+
+        // Audiobook -- the actual downloaded file extracted from a real
+        // AudioBookBay grab (as opposed to the torrent/release title
+        // above), no colon at all.
+        [TestCase("Mage Tank 2 A LitRPG Adventure.m4b", "Mage Tank", 2, 0, 0)]
+
+        // Audiobook -- book 1 release with no number anywhere, real
+        // AudioBookBay search result confirmed live.
+        [TestCase("Mage Tank - Cornman [M4B] [128 Kbps]", "Mage Tank", 1, 0, 0)]
+
+        // Audiobook -- fractional/novella book number, real file from the
+        // user's library. Resolves to floor*1000+500 = 8500, mirroring the
+        // Audible-metadata slotting convention in
+        // SkyHookProxy.ResolveBookPositions (self-identifying so the
+        // frontend can decode it back to "8.5" for display/sorting).
+        [TestCase("The Beginning After The End - Book 008.5 - Amongst the Fallen.m4b", "The Beginning After The End", 8500, 0, 0)]
+
+        // Audiobook -- synthetic regression guards for the fractional
+        // pattern: dot-separated audio metadata after the book number must
+        // NOT be read as a fractional book. "32Kbps" is a bitrate and "5.1"
+        // is a channel layout; both must fall through to plain book parsing.
+        [TestCase("Some Series.Book.010.32Kbps.m4b", "Some Series", 10, 0, 0)]
+        [TestCase("Some Series.Book.008.5.1.Surround.m4b", "Some Series", 8, 0, 0)]
+
         // [TestCase("", "", 0, 0, 0)]
         public void should_parse_absolute_numbers(string postTitle, string title, int absoluteEpisodeNumber, int seasonNumber, int episodeNumber)
         {
@@ -203,6 +237,12 @@ namespace NzbDrone.Core.Test.ParserTests
         [TestCase("[Moxie] One Series - The Country (892-916) (BD Remux 1080p AAC FLAC) [Dual Audio]", "One Series - The Country", 892, 916)]
         [TestCase("[HatSubs] One Series (1017-1088) (WEB 1080p)", "One Series", 1017, 1088)]
         [TestCase("[HatSubs] One Series 1017-1088 (WEB 1080p)", "One Series", 1017, 1088)]
+
+        // Audiobook -- 2-in-1 omnibus editions, real filenames from the
+        // user's library: comma-separated file naming and bare-hyphen folder
+        // naming. One file maps to every book it contains.
+        [TestCase("The Beginning After The End - Book 001, 002 - Early Years, New Heights.m4b", "The Beginning After The End", 1, 2)]
+        [TestCase("The Beginning After The End - Book 003-004 - Beckoning Fates, Horizon's Edge.m4b", "The Beginning After The End", 3, 4)]
 
         // [TestCase("", "", 1, 2)]
         public void should_parse_multi_episode_absolute_numbers(string postTitle, string title, int firstAbsoluteEpisodeNumber, int lastAbsoluteEpisodeNumber)

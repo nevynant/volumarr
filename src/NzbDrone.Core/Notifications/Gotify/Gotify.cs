@@ -13,8 +13,6 @@ namespace NzbDrone.Core.Notifications.Gotify
 {
     public class Gotify : NotificationBase<GotifySettings>
     {
-        private const string SonarrImageUrl = "https://raw.githubusercontent.com/Sonarr/Sonarr/develop/Logo/128.png";
-
         private readonly IGotifyProxy _proxy;
         private readonly ILocalizationService _localizationService;
         private readonly Logger _logger;
@@ -89,30 +87,13 @@ namespace NzbDrone.Core.Notifications.Gotify
                 const string title = "Test Notification";
 
                 var sb = new StringBuilder();
-                sb.AppendLine("This is a test message from Sonarr");
+                sb.AppendLine("This is a test message from Volumarr");
 
                 var payload = new GotifyMessage
                 {
                     Title = title,
                     Priority = Settings.Priority
                 };
-
-                if (Settings.IncludeSeriesPoster)
-                {
-                    isMarkdown = true;
-
-                    sb.AppendLine($"\r![]({SonarrImageUrl})");
-                    payload.SetImage(SonarrImageUrl);
-                }
-
-                if (Settings.MetadataLinks.Any())
-                {
-                    isMarkdown = true;
-
-                    sb.AppendLine("");
-                    sb.AppendLine("[Sonarr.tv](https://sonarr.tv)");
-                    payload.SetClickUrl("https://sonarr.tv");
-                }
 
                 payload.Message = sb.ToString();
                 payload.SetContentType(isMarkdown);

@@ -63,6 +63,21 @@ namespace NzbDrone.Core.MediaFiles
 
             // Bluray
             { ".m2ts", Quality.Bluray720p },
+
+            // Audiobook -- reusing Quality.SDTV as a technical no-op (see
+            // project notes: a real audiobook-specific Quality would need a
+            // DB migration retrofitting every existing QualityProfile's
+            // saved JSON, not worth it yet). Cosmetic-only tradeoff: shows
+            // an "SDTV" label on audiobook files.
+            { ".m4b", Quality.SDTV },
+            { ".m4a", Quality.SDTV },
+            { ".mp3", Quality.SDTV },
+
+            // Ebook editions -- tracked in Season 2 (see
+            // SkyHookProxy.MapEbookEpisode); Parser.ParsePath offsets their
+            // absolute numbers so they can't steal audiobook slots.
+            // WEBRip480p is repurposed as the "EPUB" quality.
+            { ".epub", Quality.WEBRip480p },
         };
 
         public static HashSet<string> Extensions => new(FileExtensions.Keys, StringComparer.OrdinalIgnoreCase);

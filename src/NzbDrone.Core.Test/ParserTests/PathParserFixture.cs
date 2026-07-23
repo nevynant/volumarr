@@ -48,6 +48,41 @@ namespace NzbDrone.Core.Test.ParserTests
             ExceptionVerification.IgnoreWarns();
         }
 
+        // Audiobook ebook editions: .epub absolute numbers are offset by
+        // 1,000,000 (Parser.EbookAbsoluteEpisodeOffset) to route them to
+        // their Season 2 episodes instead of stealing the audiobook (.m4b)
+        // slots -- file matching is absolute-number-based and
+        // season-agnostic. Same filename shapes, different extension.
+        [TestCase(@"C:\Audiobooks\Dungeon Crawler Carl\Dungeon Crawler Carl - Book 001 - The Apocalypse Will be Televised.epub", new[] { 1000001 })]
+        [TestCase(@"C:\Audiobooks\The Beginning After the End\The Beginning After The End - Book 001, 002 - Early Years, New Heights.epub", new[] { 1000001, 1000002 })]
+        [TestCase(@"C:\Audiobooks\The Beginning After the End\The Beginning After The End - Book 008.5 - Amongst the Fallen.epub", new[] { 1008500 })]
+
+        // Folder-fallback: unnumbered epub inside a "Book N - Subtitle"
+        // folder (real gap found live: DCC book 8 was the only one of 8 not
+        // matched, because the spaced dash after the number defeated every
+        // title-before-Book pattern).
+        [TestCase(@"C:\Audiobooks\Dungeon Crawler Carl\Book 8 - A Parade of Horribles\A Parade of Horribles.epub", new[] { 1000008 })]
+        public void should_offset_epub_absolute_numbers(string path, int[] absoluteEpisodes)
+        {
+            var result = Parser.Parser.ParsePath(path.AsOsAgnostic());
+
+            result.AbsoluteEpisodeNumbers.Should().BeEquivalentTo(absoluteEpisodes);
+
+            ExceptionVerification.IgnoreWarns();
+        }
+
+        // Same filename as an epub case above but audio extension: absolute
+        // numbers must stay UN-offset (Season 1 audiobook slots).
+        [TestCase(@"C:\Audiobooks\Dungeon Crawler Carl\Dungeon Crawler Carl - Book 001 - The Apocalypse Will be Televised.m4b", new[] { 1 })]
+        public void should_not_offset_audio_absolute_numbers(string path, int[] absoluteEpisodes)
+        {
+            var result = Parser.Parser.ParsePath(path.AsOsAgnostic());
+
+            result.AbsoluteEpisodeNumbers.Should().BeEquivalentTo(absoluteEpisodes);
+
+            ExceptionVerification.IgnoreWarns();
+        }
+
         [TestCase("01-03\\The Series Title (2010) - 1x01-02-03 - Episode Title HDTV-720p Proper", "The Series Title (2010)", 1, new[] { 1, 2, 3 })]
         [TestCase("Season 2\\E05-06 - Episode Title HDTV-720p Proper", "", 2, new[] { 5, 6 })]
         public void should_parse_multi_episode_from_path(string path, string title, int season, int[] episodes)

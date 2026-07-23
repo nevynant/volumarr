@@ -446,11 +446,7 @@ function PageSidebar() {
         <div className={styles.sidebarHeader}>
           <div className={styles.logoContainer}>
             <Link className={styles.logoLink} to="/">
-              <img
-                className={styles.logo}
-                src={`${window.Sonarr.urlBase}/Content/Images/logo.svg`}
-                alt="Sonarr Logo"
-              />
+              <span className={styles.wordmark}>Volumarr</span>
             </Link>
           </div>
 

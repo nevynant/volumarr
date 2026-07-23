@@ -182,7 +182,7 @@ namespace NzbDrone.Core.Notifications.Email
 
             try
             {
-                SendEmail(settings, "Sonarr - Test Notification", body);
+                SendEmail(settings, "Volumarr - Test Notification", body);
             }
             catch (Exception ex)
             {

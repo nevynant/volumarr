@@ -7,7 +7,7 @@ namespace NzbDrone.Core.Exceptions
         public int TvdbSeriesId { get; set; }
 
         public SeriesNotFoundException(int tvdbSeriesId)
-            : base(string.Format("Series with tvdbid {0} was not found, it may have been removed from TheTVDB.", tvdbSeriesId))
+            : base(string.Format("Series with id {0} was not found, it may have been removed from Audible.", tvdbSeriesId))
         {
             TvdbSeriesId = tvdbSeriesId;
         }

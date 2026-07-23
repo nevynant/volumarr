@@ -1,10 +1,8 @@
 # How to Contribute
 
-We're always looking for people to help make Sonarr even better, there are a number of ways to contribute.
-
-## Documentation
-
-Setup guides, [FAQ](https://wiki.servarr.com/sonarr/faq), the more information we have on the [wiki](https://wiki.servarr.com/sonarr) the better.
+Volumarr is a personal fork of Sonarr, not currently accepting public
+contributions. The development setup below is retained from Sonarr since
+the underlying tooling is unchanged.
 
 ## Development
 

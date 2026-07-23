@@ -24,7 +24,8 @@ namespace NzbDrone.Core.Parser
                                                                 (?<dvd>DVD|DVDRip|NTSC|PAL|xvidvd)|
                                                                 (?<dsr>WS[-_. ]DSR|DSR)|
                                                                 (?<pdtv>PDTV)|
-                                                                (?<sdtv>SDTV)|
+                                                                (?<sdtv>SDTV|Audiobook)|
+                                                                (?<epub>EPUB)|
                                                                 (?<tvrip>TVRip)
                                                                 )(?:\b|$|[ .])",
                                                                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
@@ -199,6 +200,15 @@ namespace NzbDrone.Core.Parser
                     }
 
                     result.Quality = Quality.WEBDL480p;
+                    return result;
+                }
+
+                // WEBRip480p is repurposed as the "EPUB" quality (same
+                // pattern as SDTV/"Audiobook") -- resolution-independent,
+                // matched purely by the EPUB keyword.
+                if (sourceMatch.Groups["epub"].Success)
+                {
+                    result.Quality = Quality.WEBRip480p;
                     return result;
                 }
 

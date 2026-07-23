@@ -2,6 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 using FluentValidation;
 using FluentValidation.Validators;
+using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 
 namespace NzbDrone.Core.Validation
@@ -71,7 +72,9 @@ namespace NzbDrone.Core.Validation
         public static IRuleBuilderOptions<T, string> StartsOrEndsWithSonarr<T>(this IRuleBuilder<T, string> ruleBuilder)
         {
             ruleBuilder.SetValidator(new NotEmptyValidator(null));
-            return ruleBuilder.SetValidator(new RegularExpressionValidator("^Sonarr|Sonarr$")).WithMessage("Must start or end with Sonarr");
+            var appName = Regex.Escape(BuildInfo.AppName);
+            return ruleBuilder.SetValidator(new RegularExpressionValidator($"^{appName}|{appName}$"))
+                               .WithMessage($"Must start or end with {BuildInfo.AppName}");
         }
     }
 }

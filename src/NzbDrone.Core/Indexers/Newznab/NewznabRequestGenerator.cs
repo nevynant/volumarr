@@ -76,6 +76,21 @@ namespace NzbDrone.Core.Indexers.Newznab
             }
         }
 
+        // Audiobook-only indexers (e.g. AudioBookBay) advertise book-search
+        // instead of tv-search -- used as a last-resort fallback in
+        // AddTitlePageableRequests below, since this fork otherwise has no
+        // way to query indexers with no tv-search capability at all.
+        private bool SupportsBookQuerySearch
+        {
+            get
+            {
+                var capabilities = _capabilitiesProvider.GetCapabilities(Settings);
+
+                return capabilities.SupportedBookSearchParameters != null &&
+                       capabilities.SupportedBookSearchParameters.Contains("q");
+            }
+        }
+
         private bool SupportsTvdbSearch
         {
             get
@@ -215,14 +230,21 @@ namespace NzbDrone.Core.Indexers.Newznab
         {
             var pageableRequests = new IndexerPageableRequestChain();
 
-            if (!SupportsEpisodeSearch)
+            // Book-search-only indexers (e.g. AudioBookBay) have no
+            // season/ep params at all -- they're a flat title query,
+            // relying on AddTitlePageableRequests' book branch plus
+            // release-title parsing downstream (same "Book NNN" parsing
+            // used for file matching) to land on the right episode. Skip
+            // the season/ep capability requirement for them rather than
+            // bailing out before ever reaching that branch.
+            if (!SupportsEpisodeSearch && !SupportsBookQuerySearch)
             {
                 _logger.Debug("Indexer capabilities lacking season & ep query parameters, no Standard series search possible: {0}", Definition.Name);
 
                 return pageableRequests;
             }
 
-            if (!SupportsTvTextSearches && !SupportsTvIdSearches)
+            if (!SupportsTvTextSearches && !SupportsTvIdSearches && !SupportsBookQuerySearch)
             {
                 _logger.Debug("Indexer capabilities lacking q, title, tvdbid, imdbid, rid and tvmazeid parameters, no Standard series search possible: {0}", Definition.Name);
 
@@ -440,6 +462,20 @@ namespace NzbDrone.Core.Indexers.Newznab
                             "tvsearch",
                             $"&q={NewsnabifyTitle(queryTitle)}&season={NewznabifySeasonNumber(searchCriteria.SeasonNumber)}&ep={searchCriteria.EpisodeNumber}"));
                     }
+
+                    // Book-search-only indexers (e.g. AudioBookBay) don't
+                    // match the combined "title+NN" query above -- their
+                    // search engines expect a plain title query, with the
+                    // right book/episode picked out downstream by release
+                    // title parsing (same as AddTitlePageableRequests'
+                    // book branch for the single-episode search path).
+                    if (SupportsBookQuerySearch)
+                    {
+                        pageableRequests.Add(GetPagedRequests(MaxPages,
+                            Settings.AnimeCategories,
+                            "book",
+                            $"&q={NewsnabifyTitle(queryTitle)}"));
+                    }
                 }
             }
 
@@ -496,8 +532,20 @@ namespace NzbDrone.Core.Indexers.Newznab
 
         private void AddTvIdPageableRequests(IndexerPageableRequestChain chain, IEnumerable<int> categories, SearchCriteriaBase searchCriteria, string parameters)
         {
-            var includeTvdbSearch = SupportsTvdbSearch && searchCriteria.Series.TvdbId > 0;
-            var includeImdbSearch = SupportsImdbSearch && searchCriteria.Series.ImdbId.IsNotNullOrWhiteSpace();
+            // ID-based search is always disabled here -- Series.TvdbId is a
+            // locally-assigned opaque id (see AudibleSeriesMap) and
+            // Series.ImdbId holds an Audible ASIN, not a real IMDb id.
+            // Both are always non-empty by design, so the unmodified checks
+            // below would always fire whenever an indexer/Prowlarr
+            // advertises tvdbid/imdbid support, sending meaningless ids to
+            // real indexers -- confirmed live: NZBFinder hard-rejected
+            // imdbid=<ASIN> with a 400 "Incorrect parameter" error, and
+            // other indexers returned nothing since neither id corresponds
+            // to anything they can look up. Text search (AddTitlePageableRequests,
+            // tried as the next tier) is the only search mode that makes
+            // sense for this fork.
+            var includeTvdbSearch = false;
+            var includeImdbSearch = false;
             var includeTvRageSearch = SupportsTvRageSearch && searchCriteria.Series.TvRageId > 0;
             var includeTvMazeSearch = SupportsTvMazeSearch && searchCriteria.Series.TvMazeId > 0;
             var includeTmdbSearch = SupportsTmdbSearch && searchCriteria.Series.TmdbId > 0;
@@ -594,6 +642,16 @@ namespace NzbDrone.Core.Indexers.Newznab
                         Settings.Categories,
                         "tvsearch",
                         $"&q={NewsnabifyTitle(queryTitle)}{parameters}"));
+                }
+            }
+            else if (SupportsBookQuerySearch)
+            {
+                foreach (var queryTitle in searchCriteria.CleanSceneTitles)
+                {
+                    chain.Add(GetPagedRequests(MaxPages,
+                        Settings.Categories,
+                        "book",
+                        $"&q={NewsnabifyTitle(queryTitle)}"));
                 }
             }
         }

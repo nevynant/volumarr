@@ -1,0 +1,41 @@
+# Volumarr docker-compose example.
+#
+# Volume paths below are placeholders -- adjust them to your system:
+# - /path/to/config      persistent app data (database, settings)
+# - /path/to/audiobooks  your audiobook library root
+# - /path/to/downloads   must be the same path your download client uses
+#                        for completed downloads (mounted at the same
+#                        container path on both), or finished grabs will
+#                        be invisible to Volumarr for import.
+services:
+  volumarr:
+    build: .
+    container_name: volumarr
+    restart: unless-stopped
+    ports:
+      - "8990:8989"
+    volumes:
+      - /path/to/config:/config
+      - /path/to/audiobooks:/Audiobooks
+      - /path/to/downloads:/downloads
+
+# Optional CasaOS/ZimaOS dashboard card metadata -- harmless elsewhere,
+# remove if you like. Replace <server-ip> with the LAN address of the
+# machine running Volumarr; the icon is served by Volumarr itself.
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: volumarr
+  title:
+    en_us: Volumarr
+  description:
+    en_us: Audiobook series tracker and downloader -- a Sonarr fork that
+      watches your Audible series and grabs new books as they release.
+  tagline:
+    en_us: Sonarr, but for audiobook series
+  icon: http://<server-ip>:8990/Content/Images/Icons/android-chrome-512x512.png
+  category: Media
+  port_map: "8990"
+  scheme: http
+  index: /

@@ -29,7 +29,7 @@ namespace NzbDrone.SysTray
             _trayMenu.Items.Add(new ToolStripSeparator());
             _trayMenu.Items.Add(new ToolStripMenuItem("Exit", null, OnExit));
 
-            _trayIcon.Text = string.Format("Sonarr - {0}", BuildInfo.Version);
+            _trayIcon.Text = string.Format("{0} - {1}", BuildInfo.AppName, BuildInfo.Version);
             _trayIcon.Icon = Properties.Resources.Sonarr;
 
             _trayIcon.ContextMenuStrip = _trayMenu;

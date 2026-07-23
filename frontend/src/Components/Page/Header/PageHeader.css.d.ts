@@ -3,11 +3,11 @@
 interface CssExports {
   'donate': string;
   'header': string;
-  'logo': string;
   'logoContainer': string;
   'logoLink': string;
   'right': string;
   'sidebarToggleContainer': string;
+  'wordmark': string;
 }
 export const cssExports: CssExports;
 export default cssExports;

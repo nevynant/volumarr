@@ -18,9 +18,11 @@
   line-height: 0;
 }
 
-.logo {
-  width: 32px;
-  height: 32px;
+.wordmark {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--white);
+  white-space: nowrap;
 }
 
 .sidebarToggleContainer {
@@ -52,6 +54,11 @@
 @media only screen and (max-width: $breakpointSmall) {
   .logoContainer {
     flex: 0 0 60px;
+    overflow: hidden;
+  }
+
+  .wordmark {
+    font-size: 16px;
   }
 
   .sidebarToggleContainer {

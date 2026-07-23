@@ -26,7 +26,7 @@ public class CalendarFeedController : Controller
         _tagService = tagService;
     }
 
-    [HttpGet("Sonarr.ics")]
+    [HttpGet("Volumarr.ics")]
     public Results<ContentHttpResult, NoContent> GetCalendarFeed(int pastDays = 7, int futureDays = 28, string tags = "", bool unmonitored = false, bool premieresOnly = false, bool asAllDay = false, bool includeSpecials = true)
     {
         var start = DateTime.Today.AddDays(-pastDays);

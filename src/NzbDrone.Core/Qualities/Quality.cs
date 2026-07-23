@@ -75,7 +75,16 @@ namespace NzbDrone.Core.Qualities
         }
 
         public static Quality Unknown => new Quality(0,  "Unknown", QualitySource.Unknown, 0);
-        public static Quality SDTV => new Quality(1,  "SDTV", QualitySource.Television, 480);
+        // Display name only -- this fork reuses this quality tier's
+        // existing numeric id (1) for all audiobook files (see
+        // MediaFileExtensions.cs) specifically to avoid a DB migration
+        // that would otherwise be needed to add a genuinely new quality
+        // tier. Renamed here so the UI shows something audiobook-relevant
+        // instead of the original "SDTV" label; the underlying id/source/
+        // resolution are unchanged and still say "Television"/480 since
+        // those aren't user-visible and nothing reads them for audiobook
+        // files.
+        public static Quality SDTV => new Quality(1,  "Audiobook", QualitySource.Television, 480);
         public static Quality DVD => new Quality(2,  "DVD", QualitySource.DVD, 480);
         public static Quality WEBDL1080p => new Quality(3,  "WEBDL-1080p", QualitySource.Web, 1080);
         public static Quality HDTV720p => new Quality(4,  "HDTV-720p", QualitySource.Television, 720);
@@ -87,9 +96,15 @@ namespace NzbDrone.Core.Qualities
         public static Quality RAWHD => new Quality(10, "Raw-HD", QualitySource.TelevisionRaw, 1080);
 
         // public static Quality HDTV480p    { get { return new Quality(11, "HDTV-480p", QualitySource.Television, 480); } }
+
+        // Repurposed as the ebook quality (same precedent as SDTV ->
+        // "Audiobook" above): id 12 keeps its identity so no profile
+        // migration is needed, only the display name changes. Assigned to
+        // .epub files via MediaFileExtensions and parsed back from the
+        // "EPUB" keyword in QualityParser.
         public static Quality WEBRip480p
         {
-            get { return new Quality(12, "WEBRip-480p", QualitySource.WebRip, 480); }
+            get { return new Quality(12, "EPUB", QualitySource.WebRip, 480); }
         }
 
         public static Quality Bluray480p
@@ -155,9 +170,23 @@ namespace NzbDrone.Core.Qualities
 
             DefaultQualityDefinitions = new HashSet<QualityDefinition>
             {
-                new QualityDefinition(Quality.Unknown)     { Weight = 1,  MinSize = 1, MaxSize = 199.9, PreferredSize = 95 },
-                new QualityDefinition(Quality.SDTV)        { Weight = 2,  MinSize = 2, MaxSize = 100, PreferredSize = 95 },
-                new QualityDefinition(Quality.WEBRip480p)  { Weight = 3,  MinSize = 2, MaxSize = 100, PreferredSize = 95, GroupName = "WEB 480p" },
+                // MinSize 0 for Unknown and SDTV/Audiobook -- both are the
+                // qualities audiobook content actually lands under in this
+                // fork (torrent releases almost never parse to a real
+                // quality, defaulting to Unknown; locally-scanned files are
+                // tagged SDTV/"Audiobook", see MediaFileExtensions.cs). The
+                // original per-minute-bitrate size floors here were tuned
+                // for video and rejected real audiobook releases outright
+                // (confirmed live: a genuine 1.0GB/1167min release was
+                // rejected as "too small" under the original MinSize=1).
+                new QualityDefinition(Quality.Unknown)     { Weight = 1,  MinSize = 0, MaxSize = 199.9, PreferredSize = 95 },
+                new QualityDefinition(Quality.SDTV)        { Weight = 2,  MinSize = 0, MaxSize = 100, PreferredSize = 95 },
+                // EPUB (repurposed WEBRip480p): MinSize 0 -- ebook files are
+                // tiny and Season 2 ebook episodes have Runtime 0, so any
+                // size floor would reject them. Ungrouped: keeping it inside
+                // the "WEB 480p" group would pair "EPUB" with WEBDL-480p in
+                // profile UIs, which makes no sense post-repurposing.
+                new QualityDefinition(Quality.WEBRip480p)  { Weight = 3,  MinSize = 0, MaxSize = 100, PreferredSize = 95 },
                 new QualityDefinition(Quality.WEBDL480p)   { Weight = 3,  MinSize = 2, MaxSize = 100, PreferredSize = 95, GroupName = "WEB 480p" },
                 new QualityDefinition(Quality.DVD)         { Weight = 4,  MinSize = 2, MaxSize = 100, PreferredSize = 95 },
                 new QualityDefinition(Quality.Bluray480p)  { Weight = 5,  MinSize = 2, MaxSize = 100, PreferredSize = 95 },

@@ -3,6 +3,7 @@ import Icon from 'Components/Icon';
 import Popover from 'Components/Tooltip/Popover';
 import { icons, kinds, tooltipPositions } from 'Helpers/Props';
 import { AlternateTitle, SeriesType } from 'Series/Series';
+import { formatBookNumber } from 'Utilities/Number/bookNumber';
 import padNumber from 'Utilities/Number/padNumber';
 import filterAlternateTitles from 'Utilities/Series/filterAlternateTitles';
 import translate from 'Utilities/String/translate';
@@ -84,11 +85,13 @@ function EpisodeNumber(props: EpisodeNumberProps) {
             <span>
               {showSeasonNumber && seasonNumber != null && <>{seasonNumber}x</>}
 
-              {showSeasonNumber ? padNumber(episodeNumber, 2) : episodeNumber}
+              {showSeasonNumber
+                ? padNumber(episodeNumber, 2)
+                : formatBookNumber(episodeNumber)}
 
               {seriesType === 'anime' && !!absoluteEpisodeNumber && (
                 <span className={styles.absoluteEpisodeNumber}>
-                  ({absoluteEpisodeNumber})
+                  ({formatBookNumber(absoluteEpisodeNumber)})
                 </span>
               )}
             </span>
@@ -111,11 +114,13 @@ function EpisodeNumber(props: EpisodeNumberProps) {
         <span>
           {showSeasonNumber && seasonNumber != null && <>{seasonNumber}x</>}
 
-          {showSeasonNumber ? padNumber(episodeNumber, 2) : episodeNumber}
+          {showSeasonNumber
+            ? padNumber(episodeNumber, 2)
+            : formatBookNumber(episodeNumber)}
 
           {seriesType === 'anime' && !!absoluteEpisodeNumber && (
             <span className={styles.absoluteEpisodeNumber}>
-              ({absoluteEpisodeNumber})
+              ({formatBookNumber(absoluteEpisodeNumber)})
             </span>
           )}
         </span>

@@ -44,6 +44,24 @@ namespace NzbDrone.Core.DecisionEngine.Specifications.Search
 
         private DownloadSpecDecision IsSatisfiedBy(RemoteEpisode remoteEpisode, SingleEpisodeSearchCriteria singleEpisodeSpec)
         {
+            // Absolute-numbered releases (audiobooks, anime) have no real
+            // season/episode pair in the raw parse -- SeasonNumber defaults
+            // to 0 and EpisodeNumbers stays empty, since the title only
+            // ever yields an AbsoluteEpisodeNumber. By this point the
+            // release has already been resolved to a specific episode via
+            // that absolute number (remoteEpisode.Episodes), so check
+            // against the resolved episode instead of the raw parse.
+            if (remoteEpisode.ParsedEpisodeInfo.IsAbsoluteNumbering)
+            {
+                if (!remoteEpisode.Episodes.Any(e => e.SeasonNumber == singleEpisodeSpec.SeasonNumber && e.EpisodeNumber == singleEpisodeSpec.EpisodeNumber))
+                {
+                    _logger.Debug("Resolved episode does not match searched episode, skipping.");
+                    return DownloadSpecDecision.Reject(DownloadRejectionReason.WrongEpisode, "Wrong episode");
+                }
+
+                return DownloadSpecDecision.Accept();
+            }
+
             if (singleEpisodeSpec.SeasonNumber != remoteEpisode.ParsedEpisodeInfo.SeasonNumber)
             {
                 _logger.Debug("Season number does not match searched season number, skipping.");

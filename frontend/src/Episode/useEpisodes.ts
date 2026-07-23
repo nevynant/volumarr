@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import clientSideFilterAndSort from 'Utilities/Filter/clientSideFilterAndSort';
+import { decodeBookNumber } from 'Utilities/Number/bookNumber';
 import Episode from './Episode';
 import { useEpisodeOptions } from './episodeOptionsStore';
 import { setEpisodeQueryKey } from './useEpisode';
@@ -76,6 +77,13 @@ export const useSeasonEpisodes = (seriesId: number, seasonNumber: number) => {
       {
         sortKey,
         sortDirection,
+        // Fractional books are stored as floor*1000+500 (see
+        // Utilities/Number/bookNumber) -- sort on the decoded value so
+        // book 8.5 lands between 8 and 9 instead of after book 8500.
+        sortPredicates: {
+          episodeNumber: (episode: Episode) =>
+            decodeBookNumber(episode.episodeNumber),
+        },
       }
     );
 

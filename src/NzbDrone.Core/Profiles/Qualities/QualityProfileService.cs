@@ -97,9 +97,16 @@ namespace NzbDrone.Core.Profiles.Qualities
 
             _logger.Info("Setting up default quality profiles");
 
+            // Quality.Unknown is included here (audiobooks-focused fork
+            // only) because torrent release titles almost never parse to a
+            // real quality tier -- confirmed live: every real AudioBookBay
+            // release lands as Unknown, and rejecting Unknown by default
+            // (real Sonarr's original behavior) meant nothing could ever
+            // actually be grabbed out of the box.
             AddDefaultProfile("Any",
                 Quality.SDTV,
                 Quality.SDTV,
+                Quality.Unknown,
                 Quality.WEBRip480p,
                 Quality.WEBDL480p,
                 Quality.DVD,

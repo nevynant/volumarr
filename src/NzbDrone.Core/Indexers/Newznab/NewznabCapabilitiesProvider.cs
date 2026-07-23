@@ -151,6 +151,16 @@ namespace NzbDrone.Core.Indexers.Newznab
 
                     capabilities.TvTextSearchEngine = xmlTvSearch.Attribute("searchEngine")?.Value ?? capabilities.TvTextSearchEngine;
                 }
+
+                var xmlBookSearch = xmlSearching.Element("book-search");
+                if (xmlBookSearch == null || xmlBookSearch.Attribute("available").Value != "yes")
+                {
+                    capabilities.SupportedBookSearchParameters = null;
+                }
+                else if (xmlBookSearch.Attribute("supportedParams") != null)
+                {
+                    capabilities.SupportedBookSearchParameters = xmlBookSearch.Attribute("supportedParams").Value.Split(',');
+                }
             }
 
             var xmlCategories = xmlRoot.Element("categories");

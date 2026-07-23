@@ -147,10 +147,18 @@ function SeriesDetailsSeason({
   const lastToggledEpisode = useRef<number | null>(null);
   const hasSetInitalExpand = useRef(false);
 
+  // Volumarr format tracks: Season 1 holds audiobook files, Season 2 holds
+  // ebook editions of the same books (Sonarr allows one file per episode,
+  // so the two formats need separate episode rows -- see
+  // SkyHookProxy.MapEbookEpisode on the backend).
   const seasonNumberTitle =
     seasonNumber === 0
       ? translate('Specials')
-      : translate('SeasonNumberToken', { seasonNumber });
+      : seasonNumber === 1
+        ? 'Audiobooks'
+        : seasonNumber === 2
+          ? 'eBooks'
+          : translate('SeasonNumberToken', { seasonNumber });
 
   const handleMonitorSeasonPress = useCallback(
     (value: boolean) => {
