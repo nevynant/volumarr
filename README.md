@@ -1,5 +1,11 @@
 # Volumarr
 
+![License](https://img.shields.io/badge/license-GPLv3-blue)
+![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+![Fork of Sonarr](https://img.shields.io/badge/fork%20of-Sonarr-00ccff)
+![Status](https://img.shields.io/badge/status-personal%20project-orange)
+![Code](https://img.shields.io/badge/code-AI--assisted-8A2BE2)
+
 Volumarr is an audiobook series tracker. It monitors your Audible-catalog
 series, watches indexers for new books, and grabs, sorts, and renames them
 as they're released — the same kind of automation Sonarr provides for TV,
