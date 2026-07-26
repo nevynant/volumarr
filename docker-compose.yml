@@ -1,21 +1,22 @@
-# Deployed to /DATA/AppData/volumarr-sonarr/docker-compose.yml on the homelab
-# box (192.168.1.111) for testing, alongside (not replacing) the existing
-# Python Volumarr container. Deliberately isolated from production:
-# - different host port (8990, not the Python app's 8199 or Sonarr's own 8989)
-# - its own data volume, separate from the Python app's
+# Volumarr -- working compose file.
 #
-# The real audiobook library IS mounted (read-write, matching how Storyteller
-# and the Python app access it) so file-scanning can be tested against real
-# data -- added here, in the compose file itself, specifically so it's
-# permanent and survives `docker compose up -d` recreating the container,
-# unlike the first mount which was added out-of-band and got silently
-# dropped on the next rebuild.
+# This is a real, running configuration rather than a sanitised sample; the
+# paths below are the author's. See docker-compose.example.yml for a version
+# with placeholders. Adjust the four host paths and the icon URL to suit your
+# own setup.
 #
-# /downloads is mounted at the same container path Transmission uses
-# (/DATA/Downloads -> /downloads on the transmission container) so completed
-# grabs are actually visible to this container for import -- without this,
-# Transmission and Volumarr have zero mount overlap and a successful
-# download would just be invisible here.
+# Notes that apply to any deployment:
+#
+# - Host port 8990 avoids colliding with Sonarr's own 8989, which matters if
+#   you run both on one machine.
+#
+# - Mount your audiobook library here, in the compose file itself, so it
+#   survives `docker compose up -d` recreating the container. A mount added
+#   out-of-band (e.g. via a GUI) is silently dropped on the next rebuild.
+#
+# - /downloads must resolve to the same files your download client sees, at
+#   the same container path it uses. Without that overlap a completed grab is
+#   invisible to Volumarr and will never import.
 name: volumarr-sonarr
 services:
   volumarr-sonarr:
@@ -30,13 +31,14 @@ services:
       - /media/Main-Storage/Media/Audiobooks:/Audiobooks
       - /DATA/Downloads:/downloads
 
-# CasaOS App Management card metadata -- read directly from this compose
-# file (no App Store submission needed), root-level per CasaOS's compose
-# schema (sibling of `services`, not nested inside one). Icon points at the
-# app's own already-deployed favicon asset over LAN HTTP rather than an
-# externally hosted image, since CasaOS just needs a reachable URL to
-# fetch/cache and this one requires no extra hosting and always matches
-# current branding.
+# CasaOS / ZimaOS dashboard card metadata. Read directly from this compose
+# file -- no App Store submission needed -- and must sit at root level per
+# CasaOS's schema (a sibling of `services`, not nested inside one). Harmless
+# on other platforms; delete it if you don't use CasaOS.
+#
+# The icon URL just has to be reachable from the CasaOS host, so it points at
+# the app's own favicon rather than anywhere external. Replace the address
+# with wherever you run Volumarr.
 x-casaos:
   architectures:
     - amd64
