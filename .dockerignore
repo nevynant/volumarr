@@ -1,0 +1,51 @@
+# Keep the Docker build context to source only.
+#
+# The Dockerfile does `COPY src ./src` and `COPY frontend ./frontend`, so
+# anything lying around in the working tree ends up inside the build. Host
+# build output is the dangerous case: `obj/project.assets.json` records
+# absolute NuGet paths from the machine that produced it, so a tree built on
+# Windows (or simply on the host rather than in the container) will point the
+# in-container restore at paths that do not exist and fail the build.
+#
+# Everything listed here is regenerated inside the image, so excluding it is
+# also a straight speed win -- a polluted context can be hundreds of MB.
+
+# --- build output (regenerated in-container) ---
+_output/
+_temp/
+_tests/
+_appdata/
+**/bin/
+**/obj/
+
+# --- dependencies (restored in-container) ---
+node_modules/
+**/node_modules/
+
+# --- version control & CI ---
+.git/
+.gitattributes
+.gitignore
+.github/
+.devcontainer/
+
+# --- editor / OS ---
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- docs & packaging not needed to build the app ---
+distribution/
+*.md
+!README.md
+
+# --- local runtime config, never baked into an image ---
+config/
+test-library/
+docker-compose*.yml
