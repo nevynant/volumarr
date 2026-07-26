@@ -1,32 +1,47 @@
-# Volumarr docker-compose example.
+# Deployed to /DATA/AppData/volumarr-sonarr/docker-compose.yml on the homelab
+# box (192.168.1.111) for testing, alongside (not replacing) the existing
+# Python Volumarr container. Deliberately isolated from production:
+# - different host port (8990, not the Python app's 8199 or Sonarr's own 8989)
+# - its own data volume, separate from the Python app's
 #
-# Volume paths below are placeholders -- adjust them to your system:
-# - /path/to/config      persistent app data (database, settings)
-# - /path/to/audiobooks  your audiobook library root
-# - /path/to/downloads   must be the same path your download client uses
-#                        for completed downloads (mounted at the same
-#                        container path on both), or finished grabs will
-#                        be invisible to Volumarr for import.
+# The real audiobook library IS mounted (read-write, matching how Storyteller
+# and the Python app access it) so file-scanning can be tested against real
+# data -- added here, in the compose file itself, specifically so it's
+# permanent and survives `docker compose up -d` recreating the container,
+# unlike the first mount which was added out-of-band and got silently
+# dropped on the next rebuild.
+#
+# /downloads is mounted at the same container path Transmission uses
+# (/DATA/Downloads -> /downloads on the transmission container) so completed
+# grabs are actually visible to this container for import -- without this,
+# Transmission and Volumarr have zero mount overlap and a successful
+# download would just be invisible here.
+name: volumarr-sonarr
 services:
-  volumarr:
+  volumarr-sonarr:
     build: .
-    container_name: volumarr
+    container_name: volumarr-sonarr
     restart: unless-stopped
     ports:
       - "8990:8989"
     volumes:
-      - /path/to/config:/config
-      - /path/to/audiobooks:/Audiobooks
-      - /path/to/downloads:/downloads
+      - /DATA/AppData/volumarr-sonarr/config:/config
+      - /DATA/AppData/volumarr-sonarr/test-library:/test-library
+      - /media/Main-Storage/Media/Audiobooks:/Audiobooks
+      - /DATA/Downloads:/downloads
 
-# Optional CasaOS/ZimaOS dashboard card metadata -- harmless elsewhere,
-# remove if you like. Replace <server-ip> with the LAN address of the
-# machine running Volumarr; the icon is served by Volumarr itself.
+# CasaOS App Management card metadata -- read directly from this compose
+# file (no App Store submission needed), root-level per CasaOS's compose
+# schema (sibling of `services`, not nested inside one). Icon points at the
+# app's own already-deployed favicon asset over LAN HTTP rather than an
+# externally hosted image, since CasaOS just needs a reachable URL to
+# fetch/cache and this one requires no extra hosting and always matches
+# current branding.
 x-casaos:
   architectures:
     - amd64
     - arm64
-  main: volumarr
+  main: volumarr-sonarr
   title:
     en_us: Volumarr
   description:
@@ -34,7 +49,7 @@ x-casaos:
       watches your Audible series and grabs new books as they release.
   tagline:
     en_us: Sonarr, but for audiobook series
-  icon: http://<server-ip>:8990/Content/Images/Icons/android-chrome-512x512.png
+  icon: http://192.168.1.111:8990/Content/Images/Icons/android-chrome-512x512.png
   category: Media
   port_map: "8990"
   scheme: http
